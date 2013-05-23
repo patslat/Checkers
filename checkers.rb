@@ -17,11 +17,11 @@ class Checkers
   def play
       piece = @board.get_piece([2,1])
       
-      piece.perform_slide([3, 0], @board)
+      piece.perform_slide([3, 0])
       piece = @board.get_piece([3,0])
-      piece.perform_slide([4, 1], @board)
+      piece.perform_slide([4, 1])
       piece = @board.get_piece([5,0])
-      piece.perform_jump( [3,2], @board)
+      piece.perform_jump( [3,2])
       @board.display
   end
   
@@ -114,9 +114,9 @@ class Board
   
   def populate_row(row, color, rindex)
     if rindex.even?
-      8.times { |col| row[col] = Piece.new([rindex, col], color) unless col.even? }
+      8.times { |col| row[col] = Piece.new([rindex, col], color, self) unless col.even? }
     else
-      8.times { |col| row[col] = Piece.new([rindex, col], color) unless col.odd? }
+      8.times { |col| row[col] = Piece.new([rindex, col], color, self) unless col.odd? }
     end
   end
 end
@@ -129,46 +129,47 @@ class Piece
              :jump_move => [[2, -2], [2, 2], [-2, -2], [-2, 2]]
             }
             
-  def initialize(location, color)
+  def initialize(location, color, board)
+    @board = board
     @row, @col = location
     @color = color
     @king = false
   end
   
-  def slide_moves(board)
+  def slide_moves
     possible_moves = []
     deltas = @king ? DELTAS[:slide_move] : filter_by_color(DELTAS[:slide_move])
     deltas.each do |drow, dcol|
       move = [@row + drow, @col + dcol]
-      possible_moves << move if board.empty?(move) && board.valid_coord?(move)
+      possible_moves << move if @board.empty?(move) && @board.valid_coord?(move)
     end
     possible_moves
   end
   
-  def jump_moves(board)
+  def jump_moves
     possible_moves = []
     deltas = @king ? DELTAS[:jump_move] : filter_by_color(DELTAS[:jump_move])
     deltas.each do |drow, dcol|
-      if board.valid_jump?([@row, @col], [drow, dcol], color)
+      if @board.valid_jump?([@row, @col], [drow, dcol], color)
         move = [@row + drow, @col + dcol]
-        possible_moves << move if board.empty?(move) && board.valid_coord?(move)
+        possible_moves << move if @board.empty?(move) && @board.valid_coord?(move)
       end
     end
     possible_moves
   end
   
-  def perform_slide(move, board)
-    if slide_moves(board).include?(move)
-      board.slide_piece(self, move)
+  def perform_slide(move)
+    if slide_moves.include?(move)
+      @board.slide_piece(self, move)
     else
       raise InvalidMoveError
       puts "Not a valid move."
     end
   end
 
-  def perform_jump(move, board)
-    if jump_moves(board).include?(move)
-      board.jump_piece(self, move)
+  def perform_jump(move)
+    if jump_moves.include?(move)
+      @board.jump_piece(self, move)
     else
       raise InvalidMoveError
       puts "Not a valid move."
@@ -177,6 +178,12 @@ class Piece
   
   def perform_moves!(move_sequence)
     #if a move fails, InvalidMoveError, don't try to restore
+    # move_sequence.each do |move|
+    #       if slide_moves.include?(move)
+    #         perform_slide()
+    #       end
+    #     end
+    
   end
   
   def perform_moves(move_sequence)
