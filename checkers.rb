@@ -1,5 +1,6 @@
 require 'pp'
 require 'colorize'
+require 'yaml'
 
 class InvalidMoveError < StandardError
 end
@@ -25,9 +26,10 @@ class Checkers
       @board.display
       puts
       piece = @board.get_piece([5,0])
-      piece.perform_moves!([[3,2],[1,4]])
+      
       # piece.perform_jump([3,2])
       # piece.perform_jump([1,4])
+      piece.perform_moves!([[3,2],[1,4]]) if piece.valid_move_sequence?([[3,2],[1,4]])
       @board.display
   end
   
@@ -202,6 +204,12 @@ class Piece
   
   def valid_move_sequence?(move_sequence)
     #calls perorm_moves! on a duped Piece/Board, using begin/rescue/else
+    clone = YAML.load(self.to_yaml)
+    begin
+      clone.perform_moves!(move_sequence)
+    rescue InvalidMoveError => e
+    end
+    e ? false : true
   end
   
   private
