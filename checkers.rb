@@ -16,25 +16,51 @@ class Checkers
   end
   
   def play
-      piece = @board.get_piece([2,1])
-      
-      piece.perform_slide([3, 0])
-      piece = @board.get_piece([3,0])
-      piece.perform_slide([4, 1])
-      
-      @board.board[1][4] = nil
+    until game_over?
       @board.display
-      puts
-      piece = @board.get_piece([5,0])
       
-      # piece.perform_jump([3,2])
-      # piece.perform_jump([1,4])
-      # piece.perform_moves!([[3,2],[1,4]]) if piece.valid_move_sequence?([[3,2],[1,4]])
-      piece.perform_moves([[3,3],[1,5]]) # works for wrong seq
-      piece.perform_moves!([[3,2],[1,4]]) # works for right seq
-      @board.display
+      prompt_choose_piece
+      piece_loc = @players[@turn].get_coord
+      next if not valid_piece_choice?(piece_loc)
+      piece = @board.get_piece(piece_loc)
+      
+      prompt_move_sequence
+      move_sequence = @players[@turn].get_coords
+      next if not piece.valid_move_sequence?(move_sequence)
+      
+
+      piece.perform_moves(move_sequence)
+      
+      swap_turns
+    end
   end
   
+  private
+  def valid_piece_choice?(coord)
+    if (piece = @board.get_piece(coord)).nil? || !@board.valid_coord?(coord)
+      false
+    else
+      piece.color == @turn
+    end
+  end
+  
+  def game_over?
+    @board.get_pieces(@turn).any? do |piece|
+      piece.has_valid_moves?
+    end
+  end
+  
+  def swap_turns
+    @turn = @turn == :black ? :red : :black
+  end
+  
+  def prompt_choose_piece
+    puts "#{@turn.to_s.capitalize}, please enter the coordinates of the piece you would like to move: "
+  end
+  
+  def prompt_move_sequence
+    puts "Please enter the coordinates of the location(s) you would like to move the piece to: "
+  end
 end
 
 
@@ -58,8 +84,15 @@ class Board
   end
   
   def get_piece(coord)
+    return nil if coord.length != 2
     row, col = coord
     @board[row][col] #returns nil if empty
+  end
+  
+  def get_pieces(color)
+    @board.each_with_object([]) do |pieces, row|
+      row.each { |piece| pieces << piece if piece.color == color}
+    end
   end
   
   def slide_piece(piece, move)
@@ -146,6 +179,10 @@ class Piece
     @king = false
   end
   
+  def has_valid_moves?
+    !slide_moves.empty? || !jump_moves.empty?
+  end
+  
   def slide_moves
     possible_moves = []
     deltas = @king ? DELTAS[:slide_move] : filter_by_color(DELTAS[:slide_move])
@@ -226,6 +263,13 @@ class HumanPlayer
     @color = color
   end
   
+  def get_coord
+    gets.chomp.scan(/\d/).map(&:to_i)
+  end
+  
+  def get_coords
+    gets.chomp.scan(/\d\D\d|\d\d/).map { |pair| pair.split('').map(&:to_i) }
+  end
 end
 
 
