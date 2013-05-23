@@ -1,6 +1,9 @@
 require 'pp'
 require 'colorize'
 
+class InvalidMoveError < StandardError
+end
+
 class Checkers
   def initialize
     @board = Board.new
@@ -12,6 +15,31 @@ class Checkers
   end
   
   def play
+    perform_slide(@board.get_piece([2,1]), [3, 0])
+    
+    perform_slide(@board.get_piece([3,0]), [4, 1])
+    perform_jump(@board.get_piece([5,0]), [3,2])
+    @board.display
+  end
+  
+  
+  
+  def perform_slide(piece, move)
+    if piece.slide_moves(@board).include?(move)
+      @board.slide_piece(piece, move)
+    else
+      raise InvalidMoveError
+      puts "Not a valid move."
+    end
+  end
+  
+  def perform_jump(piece, move)
+    if piece.jump_moves(@board).include?(move)
+      @board.jump_piece(piece, move)
+    else
+      raise InvalidMoveError
+      puts "Not a valid move."
+    end
   end
   
 end
@@ -41,6 +69,29 @@ class Board
     @board[row][col] #returns nil if empty
   end
   
+  def slide_piece(piece, move)
+    start_row = piece.row
+    start_col =  piece.col
+    new_row, new_col = move
+    @board[start_row][start_col] = nil
+    piece.row = new_row
+    piece.col = new_col
+    @board[new_row][new_col] = piece
+  end
+  
+  def jump_piece(piece, move)
+    start_row = piece.row
+    start_col = piece.col
+    new_row, new_col = move
+    @board[start_row][start_col] = nil
+    jumped_coord = jumped_coord([start_row, start_col], [new_row - start_row, new_col - start_col])
+    jumped_row, jumped_col = jumped_coord
+    @board[jumped_row][jumped_col] = nil
+    piece.row = new_row
+    piece.col = new_col
+    @board[new_row][new_col] = piece
+  end
+  
   def empty?(coord)
     row, col = coord
     @board[row][col].nil?
@@ -52,12 +103,16 @@ class Board
   end
   
   def valid_jump?(start, offset, color)
+    jumped_coord = jumped_coord(start, offset)
+    return false if empty?(jumped_coord)
+    jumped_piece = get_piece(jumped_coord)
+    jumped_piece.color != color
+  end
+  
+  def jumped_coord(start, offset)
     row, col = start
     drow, dcol = offset.map { |n| n / 2}
     jumped_coord = [row + drow, col + dcol]
-    return false if empty?(jumped_coord)
-    jumped_piece = get_piece(jumped_coord)
-    jumped.color != color
   end
   
   
@@ -85,6 +140,7 @@ end
 
 
 class Piece
+  attr_accessor :row, :col
   attr_reader :color
   DELTAS = { :slide_move => [[1, -1], [1, 1], [-1, -1], [-1, 1]],
              :jump_move => [[2, -2], [2, 2], [-2, -2], [-2, 2]]
