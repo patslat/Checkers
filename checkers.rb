@@ -20,8 +20,14 @@ class Checkers
       piece.perform_slide([3, 0])
       piece = @board.get_piece([3,0])
       piece.perform_slide([4, 1])
+      
+      @board.board[1][4] = nil
+      @board.display
+      puts
       piece = @board.get_piece([5,0])
-      piece.perform_jump( [3,2])
+      piece.perform_moves!([[3,2],[1,4]])
+      # piece.perform_jump([3,2])
+      # piece.perform_jump([1,4])
       @board.display
   end
   
@@ -162,8 +168,8 @@ class Piece
     if slide_moves.include?(move)
       @board.slide_piece(self, move)
     else
-      raise InvalidMoveError
       puts "Not a valid move."
+      raise InvalidMoveError
     end
   end
 
@@ -171,19 +177,23 @@ class Piece
     if jump_moves.include?(move)
       @board.jump_piece(self, move)
     else
-      raise InvalidMoveError
       puts "Not a valid move."
+      raise InvalidMoveError
     end
   end
   
   def perform_moves!(move_sequence)
     #if a move fails, InvalidMoveError, don't try to restore
-    # move_sequence.each do |move|
-    #       if slide_moves.include?(move)
-    #         perform_slide()
-    #       end
-    #     end
-    
+    move_sequence.each do |move|
+      if slide_moves.include?(move)
+        perform_slide(move)
+      elsif jump_moves.include?(move)
+        perform_jump(move)
+      else
+        puts "Invalid move sequence"
+        raise InvalidMoveError
+      end
+    end
   end
   
   def perform_moves(move_sequence)
@@ -207,5 +217,10 @@ class HumanPlayer
     @color = color
   end
   
-  
+end
+
+
+if __FILE__ == $PROGRAM_NAME
+  c = Checkers.new
+  c.play
 end
