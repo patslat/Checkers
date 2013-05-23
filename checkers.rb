@@ -30,10 +30,11 @@ class Checkers
       
 
       piece.perform_moves(move_sequence)
-      piece.promote if piece.row == 0 || 7
+      piece.promote if piece.row == 0 || piece.row == 7
       
       swap_turns
     end
+    announce_winner
   end
   
   private
@@ -43,6 +44,11 @@ class Checkers
     else
       piece.color == @turn
     end
+  end
+  
+  def announce_winner
+    swap_turns
+    "#{@turn.to_s.capitalize} wins!"
   end
   
   def game_over?
@@ -187,6 +193,7 @@ class Piece
   end
   
   def promote
+    p "promoted!"
     @king = true
   end
   
@@ -196,6 +203,7 @@ class Piece
   
   def slide_moves
     possible_moves = []
+    
     deltas = @king ? DELTAS[:slide_move] : filter_by_color(DELTAS[:slide_move])
     deltas.each do |drow, dcol|
       move = [@row + drow, @col + dcol]
