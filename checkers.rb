@@ -16,6 +16,7 @@ class Checkers
   end
   
   def play
+    p "in play"
     until game_over?
       @board.display
       
@@ -52,7 +53,7 @@ class Checkers
   end
   
   def game_over?
-    @board.get_pieces(@turn).any? do |piece|
+    @board.get_pieces(@turn).none? do |piece|
       piece.has_valid_moves?
     end
   end
@@ -103,9 +104,14 @@ class Board
   end
   
   def get_pieces(color)
-    @board.each_with_object([]) do |pieces, row|
-      row.each { |piece| pieces << piece if piece.color == color}
+    pieces = []
+    8.times do |row|
+      8.times do |col|
+        piece = get_piece([row, col])
+        pieces << piece if !piece.nil? && piece.color == color
+      end
     end
+    pieces
   end
   
   def slide_piece(piece, move)
@@ -193,23 +199,25 @@ class Piece
   end
   
   def promote
-    p "promoted!"
     @king = true
   end
   
   def has_valid_moves?
-    !slide_moves.empty? || !jump_moves.empty?
+    !slide_moves.empty? || jump_move_available?
   end
   
   def slide_moves
     possible_moves = []
-    
-    deltas = @king ? DELTAS[:slide_move] : filter_by_color(DELTAS[:slide_move])
-    deltas.each do |drow, dcol|
-      move = [@row + drow, @col + dcol]
-      possible_moves << move if @board.empty?(move) && @board.valid_coord?(move)
+    if jump_move_available?
+      possible_moves
+    else
+      deltas = @king ? DELTAS[:slide_move] : filter_by_color(DELTAS[:slide_move])
+      deltas.each do |drow, dcol|
+        move = [@row + drow, @col + dcol]
+        possible_moves << move if @board.empty?(move) && @board.valid_coord?(move)
+      end
+      possible_moves
     end
-    possible_moves
   end
   
   def jump_moves
@@ -244,7 +252,9 @@ class Piece
   def perform_moves!(move_sequence)
     #if a move fails, InvalidMoveError, don't try to restore
     move_sequence.each do |move|
+      p slide_moves
       if slide_moves.include?(move)
+        p "in the if"
         perform_slide(move)
       elsif jump_moves.include?(move)
         perform_jump(move)
@@ -263,10 +273,18 @@ class Piece
     #calls perorm_moves! on a duped Piece/Board, using begin/rescue/else
     clone = YAML.load(self.to_yaml)
     begin
+      
       clone.perform_moves!(move_sequence)
     rescue InvalidMoveError => e
     end
     e ? false : true
+  end
+  
+
+  def jump_move_available?
+    @board.get_pieces(color).any? do |piece|
+      piece.jump_moves != []
+    end
   end
   
   private
@@ -295,4 +313,5 @@ end
 if __FILE__ == $PROGRAM_NAME
   c = Checkers.new
   c.play
+
 end
