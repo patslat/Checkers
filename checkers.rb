@@ -48,8 +48,18 @@ class Board
   
   def valid_coord?(coord)
     row, col = coord
-    
+    (0..7).include?(row) && (0..7).include?(col)
   end
+  
+  def valid_jump?(start, offset, color)
+    row, col = start
+    drow, dcol = offset.map { |n| n / 2}
+    jumped_coord = [row + drow, col + dcol]
+    return false if empty?(jumped_coord)
+    jumped_piece = get_piece(jumped_coord)
+    jumped.color != color
+  end
+  
   
   private
   def generate_board
@@ -90,8 +100,6 @@ class Piece
     possible_moves = []
     deltas = @king ? DELTAS[:slide_move] : filter_by_color(DELTAS[:slide_move])
     deltas.each do |drow, dcol|
-      p drow
-      p dcol
       move = [@row + drow, @col + dcol]
       possible_moves << move if board.empty?(move) && board.valid_coord?(move)
     end
@@ -100,7 +108,14 @@ class Piece
   
   def jump_moves(board)
     possible_moves = []
-    
+    deltas = @king ? DELTAS[:jump_move] : filter_by_color(DELTAS[:jump_move])
+    deltas.each do |drow, dcol|
+      if board.valid_jump?([@row, @col], [drow, dcol], color)
+        move = [@row + drow, @col + dcol]
+        possible_moves << move if board.empty?(move) && board.valid_coord?(move)
+      end
+    end
+    possible_moves
   end
   
   def perform_moves!(move_sequence)
@@ -117,7 +132,6 @@ class Piece
   
   private
   def filter_by_color(deltas)
-    p deltas
     return deltas.select { |row, col| row > 0 } if color == :red
     return deltas.select { |row, col| row < 0 } if color == :black
   end
