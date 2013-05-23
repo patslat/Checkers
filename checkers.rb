@@ -29,7 +29,9 @@ class Checkers
       
       # piece.perform_jump([3,2])
       # piece.perform_jump([1,4])
-      piece.perform_moves!([[3,2],[1,4]]) if piece.valid_move_sequence?([[3,2],[1,4]])
+      # piece.perform_moves!([[3,2],[1,4]]) if piece.valid_move_sequence?([[3,2],[1,4]])
+      piece.perform_moves([[3,3],[1,5]]) # works for wrong seq
+      piece.perform_moves!([[3,2],[1,4]]) # works for right seq
       @board.display
   end
   
@@ -179,7 +181,6 @@ class Piece
     if jump_moves.include?(move)
       @board.jump_piece(self, move)
     else
-      puts "Not a valid move."
       raise InvalidMoveError
     end
   end
@@ -192,7 +193,6 @@ class Piece
       elsif jump_moves.include?(move)
         perform_jump(move)
       else
-        puts "Invalid move sequence"
         raise InvalidMoveError
       end
     end
@@ -200,6 +200,7 @@ class Piece
   
   def perform_moves(move_sequence)
     #checks valid_move_seq and either calls perform_moves! or InvalidMoveError
+    perform_moves!(move_sequence) if valid_move_sequence?(move_sequence)
   end
   
   def valid_move_sequence?(move_sequence)
