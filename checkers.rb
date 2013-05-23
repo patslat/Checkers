@@ -30,6 +30,7 @@ class Checkers
       
 
       piece.perform_moves(move_sequence)
+      piece.promote if piece.row == 0 || 7
       
       swap_turns
     end
@@ -72,13 +73,19 @@ class Board
   end
     
   def display
+    print "   "
+    8.times { |n| print " #{n}  "}
+    print "\n  "
+    33.times { print '-'}
+    puts
     8.times do |row|
+      print "#{row} |"
       8.times do |col|
         color = @board[row][col].color unless @board[row][col].nil?
-        print @board[row][col].class == Piece ? "| #{"O".send(color)} |" : "|   |"
+        print @board[row][col].class == Piece ? " #{"O".send(color)} |" : "   |"
       end
-      print "\n"
-      40.times { print '-'}
+      print "\n  "
+      33.times { print '-'}
       print "\n"
     end
   end
@@ -177,6 +184,10 @@ class Piece
     @row, @col = location
     @color = color
     @king = false
+  end
+  
+  def promote
+    @king = true
   end
   
   def has_valid_moves?
