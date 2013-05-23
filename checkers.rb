@@ -16,7 +16,6 @@ class Checkers
   end
   
   def play
-    p "in play"
     until game_over?
       @board.display
       
@@ -88,8 +87,16 @@ class Board
     8.times do |row|
       print "#{row} |"
       8.times do |col|
-        color = @board[row][col].color unless @board[row][col].nil?
-        print @board[row][col].class == Piece ? " #{"O".send(color)} |" : "   |"
+        if !@board[row][col].nil?
+          color = @board[row][col].color
+          if @board[row][col].king 
+            print " #{"\u{265A}".send(color)} |"
+          else
+            print " #{"\u{25CF}".send(color)} |"  
+          end
+        else
+          print "   |"
+        end
       end
       print "\n  "
       33.times { print '-'}
@@ -115,26 +122,16 @@ class Board
   end
   
   def slide_piece(piece, move)
-    start_row = piece.row
-    start_col =  piece.col
-    new_row, new_col = move
-    @board[start_row][start_col] = nil
-    piece.row = new_row
-    piece.col = new_col
-    @board[new_row][new_col] = piece
+    clear_space([piece.row, piece.col])
+    update_piece_location(piece, move)
   end
   
   def jump_piece(piece, move)
-    start_row = piece.row
-    start_col = piece.col
-    new_row, new_col = move
-    @board[start_row][start_col] = nil
-    jumped_coord = jumped_coord([start_row, start_col], [new_row - start_row, new_col - start_col])
-    jumped_row, jumped_col = jumped_coord
-    @board[jumped_row][jumped_col] = nil
-    piece.row = new_row
-    piece.col = new_col
-    @board[new_row][new_col] = piece
+    clear_space([piece.row, piece.col])
+    distance = [move[0] - piece.row, move[1] - piece.col]
+    jumped_coord = jumped_coord([piece.row, piece.col], distance)
+    clear_space(jumped_coord)
+    update_piece_location(piece, move)
   end
   
   def empty?(coord)
@@ -154,14 +151,25 @@ class Board
     jumped_piece.color != color
   end
   
+  private
+  def clear_space(coord)
+    row, col = coord
+    @board[row][col] = nil
+  end
+  
+  def update_piece_location(piece, new_loc)
+    row, col = new_loc
+    piece.row = row
+    piece.col = col
+    @board[row][col] = piece
+  end
+  
   def jumped_coord(start, offset)
     row, col = start
     drow, dcol = offset.map { |n| n / 2}
     jumped_coord = [row + drow, col + dcol]
   end
-  
-  
-  private
+
   def generate_board
     populate_board (Array.new(8) { Array.new(8) })
   end
@@ -186,7 +194,7 @@ end
 
 class Piece
   attr_accessor :row, :col
-  attr_reader :color
+  attr_reader :color, :king
   DELTAS = { :slide_move => [[1, -1], [1, 1], [-1, -1], [-1, 1]],
              :jump_move => [[2, -2], [2, 2], [-2, -2], [-2, 2]]
             }
@@ -236,7 +244,6 @@ class Piece
     if slide_moves.include?(move)
       @board.slide_piece(self, move)
     else
-      puts "Not a valid move."
       raise InvalidMoveError
     end
   end
@@ -250,11 +257,8 @@ class Piece
   end
   
   def perform_moves!(move_sequence)
-    #if a move fails, InvalidMoveError, don't try to restore
     move_sequence.each do |move|
-      p slide_moves
       if slide_moves.include?(move)
-        p "in the if"
         perform_slide(move)
       elsif jump_moves.include?(move)
         perform_jump(move)
@@ -265,12 +269,10 @@ class Piece
   end
   
   def perform_moves(move_sequence)
-    #checks valid_move_seq and either calls perform_moves! or InvalidMoveError
     perform_moves!(move_sequence) if valid_move_sequence?(move_sequence)
   end
   
   def valid_move_sequence?(move_sequence)
-    #calls perorm_moves! on a duped Piece/Board, using begin/rescue/else
     clone = YAML.load(self.to_yaml)
     begin
       
@@ -280,14 +282,13 @@ class Piece
     e ? false : true
   end
   
-
+  private
   def jump_move_available?
     @board.get_pieces(color).any? do |piece|
       piece.jump_moves != []
     end
   end
-  
-  private
+
   def filter_by_color(deltas)
     return deltas.select { |row, col| row > 0 } if color == :red
     return deltas.select { |row, col| row < 0 } if color == :black
