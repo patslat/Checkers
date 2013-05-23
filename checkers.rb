@@ -15,31 +15,14 @@ class Checkers
   end
   
   def play
-    perform_slide(@board.get_piece([2,1]), [3, 0])
-    
-    perform_slide(@board.get_piece([3,0]), [4, 1])
-    perform_jump(@board.get_piece([5,0]), [3,2])
-    @board.display
-  end
-  
-  
-  
-  def perform_slide(piece, move)
-    if piece.slide_moves(@board).include?(move)
-      @board.slide_piece(piece, move)
-    else
-      raise InvalidMoveError
-      puts "Not a valid move."
-    end
-  end
-  
-  def perform_jump(piece, move)
-    if piece.jump_moves(@board).include?(move)
-      @board.jump_piece(piece, move)
-    else
-      raise InvalidMoveError
-      puts "Not a valid move."
-    end
+      piece = @board.get_piece([2,1])
+      
+      piece.perform_slide([3, 0], @board)
+      piece = @board.get_piece([3,0])
+      piece.perform_slide([4, 1], @board)
+      piece = @board.get_piece([5,0])
+      piece.perform_jump( [3,2], @board)
+      @board.display
   end
   
 end
@@ -172,6 +155,24 @@ class Piece
       end
     end
     possible_moves
+  end
+  
+  def perform_slide(move, board)
+    if slide_moves(board).include?(move)
+      board.slide_piece(self, move)
+    else
+      raise InvalidMoveError
+      puts "Not a valid move."
+    end
+  end
+
+  def perform_jump(move, board)
+    if jump_moves(board).include?(move)
+      board.jump_piece(self, move)
+    else
+      raise InvalidMoveError
+      puts "Not a valid move."
+    end
   end
   
   def perform_moves!(move_sequence)
