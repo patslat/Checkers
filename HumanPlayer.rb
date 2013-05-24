@@ -1,11 +1,8 @@
-require 'colorize'
-require 'yaml'
-
 class HumanPlayer
   def initialize(color)
     @color = color
   end
-  
+
   def get_coord
     gets.chomp.scan(/\d/).map(&:to_i)
   end

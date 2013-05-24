@@ -49,7 +49,6 @@ module BoardOperations
 
   
   private
-  
   def each_tile(&blk)
     8.times do |row|
       8.times do |col|
