@@ -11,7 +11,7 @@ class Checkers
     @players = {
       :black => HumanPlayer.new(:black),
       :red => HumanPlayer.new(:red)
-                }
+    }
     @turn = :black
   end
   
@@ -27,13 +27,13 @@ class Checkers
       prompt_move_sequence
       move_sequence = @players[@turn].get_coords
       next if not piece.valid_move_sequence?(move_sequence)
-      
 
-      piece.perform_moves(move_sequence)
+      piece.perform_moves!(move_sequence)
       piece.promote if piece.row == 0 || piece.row == 7
       
       swap_turns
     end
+    swap_turns
     announce_winner
   end
   
@@ -47,7 +47,6 @@ class Checkers
   end
   
   def announce_winner
-    swap_turns
     "#{@turn.to_s.capitalize} wins!"
   end
   
@@ -279,7 +278,7 @@ class Piece
       clone.perform_moves!(move_sequence)
     rescue InvalidMoveError => e
     end
-    e ? false : true
+    !e
   end
   
   private
@@ -293,7 +292,6 @@ class Piece
     return deltas.select { |row, col| row > 0 } if color == :red
     return deltas.select { |row, col| row < 0 } if color == :black
   end
-  
 end
 
 class HumanPlayer
@@ -314,5 +312,4 @@ end
 if __FILE__ == $PROGRAM_NAME
   c = Checkers.new
   c.play
-
 end
